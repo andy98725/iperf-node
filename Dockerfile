@@ -5,8 +5,8 @@ FROM alpine
 LABEL AUTHOR=andyhudson725@gmail.com
 LABEL VERSION=0.1
 
-ENV SERVER_PORT=8081
-EXPOSE 8081
+ENV SERVER_PORT=5001
+EXPOSE 5001
 
 RUN apk update && \
     apk add curl && \
@@ -31,4 +31,5 @@ RUN rm -rf /tmp/iperf-2.1.9 && \
 
 WORKDIR /root/
 
-ENTRYPOINT [ "iperf -s -p 8081" ]
+ENTRYPOINT [ "/usr/local/bin/iperf" ]
+CMD [ "-s -p 5001" ]

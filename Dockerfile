@@ -2,20 +2,27 @@
 FROM golang:1.21.6 AS build
 WORKDIR /
 
-COPY src/ ./
+COPY src/go.mod ./go.mod
+COPY src/go.sum ./go.sum
 RUN go mod download
+COPY src/ ./
 
 RUN CGO_ENABLED=0 GOOS=linux go build -o /go-server
 
 FROM alpine
 
-LABEL AUTHOR=andyhudson725@gmail.com
-LABEL VERSION=0.1
+### ==================================
+ENV ENDPOINT=http://host.docker.internal:3001
+ENV NAME="Sample iPerf node"
 
 ENV IPERF_PORT=5001
-EXPOSE 5001
 ENV PORT=8080
+EXPOSE 5001
 EXPOSE 8080
+
+LABEL AUTHOR=andyhudson725@gmail.com
+LABEL VERSION=0.1
+### ==================================
 
 RUN apk update && \
     apk add curl && \

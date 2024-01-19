@@ -58,7 +58,7 @@ func (s *server) connect() error {
 		return err
 	}
 
-	req, err := http.NewRequest("POST", s.config.serverAddr+"/svc/connect", &buf)
+	req, err := http.NewRequest("POST", s.config.serverAddr+"/api/nodes/connect", &buf)
 	if err != nil {
 		return err
 	}

@@ -14,6 +14,7 @@ func (s *server) connect() error {
 		iPerfPort  string
 	}{
 		Id:         s.config.id,
+		Key:        s.config.key,
 		ServerPort: s.config.hostPort,
 		iPerfPort:  s.config.iperfPort,
 	}
@@ -23,7 +24,7 @@ func (s *server) connect() error {
 		return err
 	}
 
-	req, err := http.NewRequest("POST", s.config.serverAddr+"/api/nodes/connect", &buf)
+	req, err := http.NewRequest("POST", s.config.serverAddr+"/api/connect", &buf)
 	if err != nil {
 		return err
 	}
@@ -55,22 +56,35 @@ func (s *server) completeTest(results *string) error {
 
 	if results != nil {
 		body := struct {
+			Id      int
+			Key     string
 			Results string
 			TestId  int
-		}{Results: *results, TestId: s.testId}
+		}{
+			Id:      s.config.id,
+			Key:     s.config.key,
+			Results: *results,
+			TestId:  s.testId,
+		}
 		if err := json.NewEncoder(&buf).Encode(body); err != nil {
 			return err
 		}
 	} else {
 		body := struct {
+			Id     int
+			Key    string
 			TestId int
-		}{TestId: s.testId}
+		}{
+			Id:     s.config.id,
+			Key:    s.config.key,
+			TestId: s.testId,
+		}
 		if err := json.NewEncoder(&buf).Encode(body); err != nil {
 			return err
 		}
 	}
 
-	req, err := http.NewRequest("POST", s.config.serverAddr+"/api/nodes/complete", &buf)
+	req, err := http.NewRequest("POST", s.config.serverAddr+"/api/complete", &buf)
 	if err != nil {
 		return err
 	}

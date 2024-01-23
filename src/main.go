@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/labstack/echo"
@@ -21,21 +22,45 @@ func main() {
 	}
 
 	e.GET("/start", func(c echo.Context) error {
-		err := s.runIperf()
-		if err != nil {
-			return c.JSON(http.StatusOK, struct{ Error string }{Error: err.Error()})
+		body := make(map[string]interface{})
+		if err := json.NewDecoder(c.Request().Body).Decode(&body); err != nil {
+			return c.JSON(http.StatusBadRequest, struct{ Error string }{Error: err.Error()})
 		}
 
-		return c.String(http.StatusOK, "iPerf started successfully on port "+s.config.iperfPort)
-	})
-	e.GET("/status", func(c echo.Context) error {
-		state, err := s.getIperfState()
-		if err != nil {
-			return c.JSON(http.StatusOK, struct{ Error string }{Error: err.Error()})
+		key, ok := body["key"].(string)
+		if !ok {
+			return c.JSON(http.StatusBadRequest, struct{ Error string }{Error: "missing key"})
+		}
+		if !s.validate(key) {
+			return c.JSON(http.StatusBadRequest, struct{ Error string }{Error: "invalid key"})
 		}
 
-		return c.String(http.StatusOK, state)
+		mode, ok := body["mode"].(string)
+		if !ok {
+			return c.JSON(http.StatusBadRequest, struct{ Error string }{Error: "missing mode"})
+		}
 
+		if mode == "client" {
+			port, ok := body["port"].(string)
+			if !ok {
+				return c.JSON(http.StatusBadRequest, struct{ Error string }{Error: "missing port"})
+			}
+			serverAddress, ok := body["serverAddress"].(string)
+			if !ok {
+				return c.JSON(http.StatusBadRequest, struct{ Error string }{Error: "missing serverAddress"})
+			}
+
+			if err := s.runIperfClient(serverAddress, port); err != nil {
+				return c.JSON(http.StatusBadRequest, struct{ Error string }{Error: err.Error()})
+			}
+			return c.String(http.StatusOK, "iPerf server started successfully")
+		} else {
+			if err := s.runIperfServer(); err != nil {
+				return c.JSON(http.StatusBadRequest, struct{ Error string }{Error: err.Error()})
+			}
+			return c.String(http.StatusOK, "iPerf server started successfully")
+
+		}
 	})
 
 	e.Logger.Fatal(e.Start(":" + s.config.hostPort))

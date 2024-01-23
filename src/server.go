@@ -12,7 +12,6 @@ import (
 )
 
 type server struct {
-	log    echo.Logger
 	config struct {
 		name       string
 		hostPort   string
@@ -20,9 +19,9 @@ type server struct {
 		serverAddr string
 	}
 
-	process   *exec.Cmd
-	outStr    string
-	outBuffer *bytes.Buffer
+	log     echo.Logger
+	process *exec.Cmd
+	testId  int
 }
 
 func initServer(log echo.Logger) (server, error) {
@@ -48,10 +47,21 @@ func initServer(log echo.Logger) (server, error) {
 	return s, s.connect()
 }
 
+func (s *server) validate(key string) bool {
+	// TODO validate
+	return true
+}
+
 func (s *server) connect() error {
 	body := struct {
-		Name string
-	}{Name: s.config.name}
+		Name       string
+		ServerPort string
+		iPerfPort  string
+	}{
+		Name:       s.config.name,
+		ServerPort: s.config.hostPort,
+		iPerfPort:  s.config.iperfPort,
+	}
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(body); err != nil {
@@ -77,29 +87,57 @@ func (s *server) connect() error {
 		return err
 	}
 
-	s.log.Debug("response recieved:")
-	s.log.Debug(resp.Status)
+	if res.StatusCode != 200 {
+		s.log.Debug("response recieved:")
+		s.log.Debug(resp.Status)
+	}
+
 	return nil
 }
 
-func (s *server) runIperf() error {
-	if s.process != nil {
-		return errors.New("iPerf is already running")
+func (s *server) completeTest(results *string) error {
+	var buf bytes.Buffer
+
+	if results != nil {
+		body := struct {
+			Results string
+			TestId  int
+		}{Results: *results, TestId: s.testId}
+		if err := json.NewEncoder(&buf).Encode(body); err != nil {
+			return err
+		}
+	} else {
+		body := struct {
+			TestId int
+		}{TestId: s.testId}
+		if err := json.NewEncoder(&buf).Encode(body); err != nil {
+			return err
+		}
 	}
 
-	s.process = exec.Command("iperf", "-s -p "+s.config.iperfPort)
-	s.outStr = ""
-	s.outBuffer = new(bytes.Buffer)
-	s.process.Stdout = s.outBuffer
+	req, err := http.NewRequest("POST", s.config.serverAddr+"/api/nodes/complete", &buf)
+	if err != nil {
+		return err
+	}
+	req.Header.Add("Content-Type", "application/json")
 
-	s.process.Start()
+	client := &http.Client{}
+	res, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	defer res.Body.Close()
+
+	resp := &struct{ Status string }{}
+	if err := json.NewDecoder(res.Body).Decode(resp); err != nil {
+		return err
+	}
+
+	if res.StatusCode != 200 {
+		s.log.Debug("response recieved:")
+		s.log.Debug(resp.Status)
+	}
 
 	return nil
-}
-func (s *server) getIperfState() (string, error) {
-	if s.process == nil {
-		return "", errors.New("iPerf is not running yet")
-	}
-
-	return s.outBuffer.String(), nil
 }

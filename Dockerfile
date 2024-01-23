@@ -13,7 +13,9 @@ FROM alpine
 
 ### ==================================
 ENV ENDPOINT=http://host.docker.internal:3001
-ENV NAME="Sample iPerf node"
+ENV ENDPOINT_KEY="<enter key here>"
+ENV HASH="<enter hash here>"
+ENV ID="<enter id here>"
 
 ENV IPERF_PORT=5001
 ENV PORT=8080
@@ -33,7 +35,7 @@ RUN apk update && \
 
 # Install iPerf
 RUN curl -L https://sourceforge.net/projects/iperf2/files/iperf-2.1.9.tar.gz/download \
-        | tar -zxv -C /tmp
+    | tar -zxv -C /tmp
 RUN cd /tmp/iperf-2.1.9 && \
     ./configure && \
     make install
@@ -53,6 +55,4 @@ COPY --from=build /go-server /go-server
 RUN adduser -D nonroot 
 USER nonroot:nonroot
 
-# ENTRYPOINT [ "/usr/local/bin/iperf" ]
-# CMD [ "-s -p 5001" ]
 CMD /go-server

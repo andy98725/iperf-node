@@ -2,7 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
@@ -21,7 +23,7 @@ func main() {
 		panic(err)
 	}
 
-	e.GET("/start", func(c echo.Context) error {
+	e.POST("/start", func(c echo.Context) error {
 		body := make(map[string]interface{})
 		if err := json.NewDecoder(c.Request().Body).Decode(&body); err != nil {
 			return c.JSON(http.StatusBadRequest, struct{ Error string }{Error: err.Error()})
@@ -33,6 +35,15 @@ func main() {
 		}
 		if !s.validate(key) {
 			return c.JSON(http.StatusBadRequest, struct{ Error string }{Error: "invalid key"})
+		}
+
+		testIdRaw, ok := body["testId"]
+		if !ok {
+			return c.JSON(http.StatusBadRequest, struct{ Error string }{Error: "missing testId"})
+		}
+		testId, err := strconv.Atoi(fmt.Sprintf("%v", testIdRaw))
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, struct{ Error string }{Error: "testId must be integer"})
 		}
 
 		mode, ok := body["mode"].(string)
@@ -50,17 +61,24 @@ func main() {
 				return c.JSON(http.StatusBadRequest, struct{ Error string }{Error: "missing serverAddress"})
 			}
 
-			if err := s.runIperfClient(serverAddress, port); err != nil {
+			if err := s.runIperfClient(testId, serverAddress, port); err != nil {
 				return c.JSON(http.StatusBadRequest, struct{ Error string }{Error: err.Error()})
 			}
 			return c.String(http.StatusOK, "iPerf server started successfully")
 		} else {
-			if err := s.runIperfServer(); err != nil {
+			if err := s.runIperfServer(testId); err != nil {
 				return c.JSON(http.StatusBadRequest, struct{ Error string }{Error: err.Error()})
 			}
 			return c.String(http.StatusOK, "iPerf server started successfully")
-
 		}
+	})
+	e.POST("/finish", func(c echo.Context) error {
+		if err := s.finishIperfServer(); err != nil {
+			return c.JSON(http.StatusBadRequest, struct{ Error string }{Error: err.Error()})
+		}
+
+		return c.String(http.StatusOK, "iPerf server closed successfully")
+
 	})
 
 	e.Logger.Fatal(e.Start(":" + s.config.hostPort))

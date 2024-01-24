@@ -1,41 +1,55 @@
 package main
 
 import (
-	"bytes"
 	"errors"
 	"os/exec"
 )
 
-func (s *server) runIperfServer() error {
+func (s *server) runIperfClient(testId int, addr, port string) error {
 	if s.process != nil {
 		return errors.New("iPerf is already running")
 	}
+	s.log.Debug("Starting iPerf client with test ID ", testId, ", address ", addr, ", port ", port)
 
-	s.process = exec.Command("iperf", "-s -p "+s.config.iperfPort)
+	s.testId = testId
+	s.process = exec.Command("iperf", "-c "+addr, "-p "+s.config.iperfPort)
 	go func() {
-		buf := new(bytes.Buffer)
-		s.process.Stdout = buf
-		s.process.Run()
+		out, err := s.process.CombinedOutput()
+		if err != nil {
+			s.log.Error("Test failed with error: " + err.Error())
+			s.failTest(string(out))
+			return
+		}
 
-		results := buf.String()
-		s.completeTest(&results)
+		s.completeClientTest(string(out))
 	}()
 	return nil
 }
 
-func (s *server) runIperfClient(addr, port string) error {
+func (s *server) runIperfServer(testId int) error {
 	if s.process != nil {
 		return errors.New("iPerf is already running")
 	}
+	s.log.Debug("Starting iPerf server with test ID ", testId)
 
-	s.process = exec.Command("iperf", "-c "+addr+" -p "+s.config.iperfPort)
+	s.testId = testId
+	s.process = exec.Command("iperf", "-s", "-p "+s.config.iperfPort)
 	go func() {
-		buf := new(bytes.Buffer)
-		s.process.Stdout = buf
-		s.process.Run()
-
-		results := buf.String()
-		s.completeTest(&results)
+		_, _ = s.process.CombinedOutput()
 	}()
+	return nil
+}
+func (s *server) finishIperfServer() error {
+	if s.process == nil {
+		return errors.New("iPerf is not running")
+	}
+	s.log.Debug("Closing iPerf server with test ID ", s.testId)
+
+	if err := s.process.Process.Kill(); err != nil {
+		return err
+	}
+	s.process = nil
+
+	s.completeServerTest()
 	return nil
 }

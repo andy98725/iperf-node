@@ -33,7 +33,7 @@ RUN apk update && \
     apk add build-base
 
 
-# Install iPerf
+# Install Iperf
 RUN curl -L https://sourceforge.net/projects/iperf2/files/iperf-2.1.9.tar.gz/download \
     | tar -zxv -C /tmp
 RUN cd /tmp/iperf-2.1.9 && \

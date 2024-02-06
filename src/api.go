@@ -50,27 +50,35 @@ func (s *server) connect() error {
 		return errors.New(string(bodyBytes))
 	}
 
-	s.log.Debug("Connected.")
+	s.log.Info("Connected.")
 	return nil
 }
 
-func (s *server) completeClientTest(results string) error {
+func (s *server) completeClientTest(results string, failed bool) error {
 	if results == "" {
 		results = "<no output>"
 	}
-	s.log.Debug("Completed test with results")
-	s.log.Debug(results)
+
+	if failed {
+		s.log.Error("Failed test.")
+		s.log.Error(results)
+	} else {
+		s.log.Debug("Test completed.")
+		s.log.Debug(results)
+	}
 
 	body := struct {
 		Id      int    `json:"id"`
 		Key     string `json:"key"`
 		Results string `json:"results"`
 		TestId  int    `json:"testId"`
+		Failed  bool   `json:"failed"`
 	}{
 		Id:      s.config.id,
 		Key:     s.config.key,
 		Results: results,
 		TestId:  s.testId,
+		Failed:  failed,
 	}
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(body); err != nil {
@@ -104,7 +112,7 @@ func (s *server) completeClientTest(results string) error {
 }
 
 func (s *server) completeServerTest() error {
-	s.log.Debug("Completed test")
+	s.log.Debug("Completed test.")
 
 	body := struct {
 		Id     int    `json:"id"`
@@ -137,17 +145,11 @@ func (s *server) completeServerTest() error {
 	if res.StatusCode != 200 {
 		bodyBytes, err := io.ReadAll(res.Body)
 		if err != nil {
-			s.log.Fatal(err)
+			s.log.Error(err)
 		}
 		s.log.Error("Endpoint responded with code ", res.StatusCode)
 		s.log.Error(string(bodyBytes))
 	}
 
 	return nil
-}
-
-func (s *server) failTest(err string) {
-	s.log.Error("Failed test output: " + err)
-	// TODO report fail, close client / server
-	s.completeClientTest(err)
 }

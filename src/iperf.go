@@ -17,11 +17,11 @@ func (s *server) runIperfClient(testId int, addr, port string) error {
 		out, err := s.process.CombinedOutput()
 		if err != nil {
 			s.log.Error("Test failed with error: " + err.Error())
-			s.failTest(string(out))
+			s.completeClientTest(string(out), true)
 			return
 		}
 
-		s.completeClientTest(string(out))
+		s.completeClientTest(string(out), false)
 	}()
 	return nil
 }

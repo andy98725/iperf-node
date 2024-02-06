@@ -23,6 +23,9 @@ func main() {
 		panic(err)
 	}
 
+	e.POST("/health", func(c echo.Context) error {
+		return c.JSON(http.StatusOK, struct{ Status string }{Status: "healthy"})
+	})
 	e.POST("/start", func(c echo.Context) error {
 		body := make(map[string]interface{})
 		if err := json.NewDecoder(c.Request().Body).Decode(&body); err != nil {
@@ -78,7 +81,13 @@ func main() {
 		}
 
 		return c.String(http.StatusOK, "iPerf server closed successfully")
+	})
+	e.POST("/close", func(c echo.Context) error {
+		if err := s.closeIperf(); err != nil {
+			return c.JSON(http.StatusBadRequest, struct{ Error string }{Error: err.Error()})
+		}
 
+		return c.String(http.StatusOK, "iPerf closed successfully")
 	})
 
 	e.Logger.Fatal(e.Start(":" + s.config.hostPort))

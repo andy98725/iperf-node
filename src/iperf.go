@@ -40,16 +40,23 @@ func (s *server) runIperfServer(testId int) error {
 	return nil
 }
 func (s *server) finishIperfServer() error {
+	if err := s.closeIperf(); err != nil {
+		return err
+	}
+
+	return s.completeServerTest()
+}
+func (s *server) closeIperf() error {
 	if s.process == nil {
 		return errors.New("iPerf is not running")
 	}
-	s.log.Debug("Closing iPerf server with test ID ", s.testId)
+	s.log.Debug("Closing iPerf with test ID ", s.testId)
 
 	if err := s.process.Process.Kill(); err != nil {
 		return err
 	}
 	s.process = nil
 
-	s.completeServerTest()
 	return nil
+
 }

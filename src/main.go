@@ -23,7 +23,7 @@ func main() {
 		panic(err)
 	}
 
-	e.POST("/health", func(c echo.Context) error {
+	e.GET("/health", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, struct{ Status string }{Status: "healthy"})
 	})
 	e.POST("/start", func(c echo.Context) error {

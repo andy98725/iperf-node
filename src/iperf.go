@@ -12,7 +12,7 @@ func (s *server) runIperfClient(testId int, addr, port string) error {
 	s.log.Debug("Starting iPerf client with test ID ", testId, ", address ", addr, ", port ", port)
 
 	s.testId = testId
-	s.process = exec.Command("iperf", "-c "+addr, "-p "+s.config.iperfPort)
+	s.process = exec.Command("iperf", "-c "+addr, "-p "+port)
 	go func() {
 		out, err := s.process.CombinedOutput()
 		if err != nil {

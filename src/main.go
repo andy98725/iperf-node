@@ -85,7 +85,11 @@ func main() {
 		}
 	})
 	e.POST("/finish", func(c echo.Context) error {
-		if err := s.finishIperfServer(); err != nil {
+		if err := s.closeIperf(); err != nil {
+			return c.JSON(http.StatusBadRequest, struct{ Error string }{Error: err.Error()})
+		}
+
+		if err := s.completeServerTest(); err != nil {
 			return c.JSON(http.StatusBadRequest, struct{ Error string }{Error: err.Error()})
 		}
 
@@ -93,6 +97,10 @@ func main() {
 	})
 	e.POST("/close", func(c echo.Context) error {
 		if err := s.closeIperf(); err != nil {
+			return c.JSON(http.StatusBadRequest, struct{ Error string }{Error: err.Error()})
+		}
+		// Refresh connection status
+		if err := s.connect(); err != nil {
 			return c.JSON(http.StatusBadRequest, struct{ Error string }{Error: err.Error()})
 		}
 

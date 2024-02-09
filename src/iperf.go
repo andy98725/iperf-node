@@ -39,13 +39,6 @@ func (s *server) runIperfServer(testId int) error {
 	}()
 	return nil
 }
-func (s *server) finishIperfServer() error {
-	if err := s.closeIperf(); err != nil {
-		return err
-	}
-
-	return s.completeServerTest()
-}
 func (s *server) closeIperf() error {
 	if s.process == nil {
 		return errors.New("iPerf is not running")

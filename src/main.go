@@ -23,6 +23,15 @@ func main() {
 		panic(err)
 	}
 
+	if useQuickstart(&s) {
+		return
+	}
+
+	if err = s.connect(); err != nil {
+		e.Logger.Fatal(err)
+		panic(err)
+	}
+
 	e.GET("/health", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, struct{ Status string }{Status: "healthy"})
 	})
@@ -64,7 +73,7 @@ func main() {
 				return c.JSON(http.StatusBadRequest, struct{ Error string }{Error: "missing serverAddress"})
 			}
 
-			if err := s.runIperfClient(testId, serverAddress, port); err != nil {
+			if err := s.runIperfClient(testId, serverAddress, port, s.completeClientTest); err != nil {
 				return c.JSON(http.StatusBadRequest, struct{ Error string }{Error: err.Error()})
 			}
 			return c.String(http.StatusOK, "iPerf server started successfully")

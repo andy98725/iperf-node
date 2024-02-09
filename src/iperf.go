@@ -5,23 +5,23 @@ import (
 	"os/exec"
 )
 
-func (s *server) runIperfClient(testId int, addr, port string) error {
+func (s *server) runIperfClient(testId int, addr, port string, onComplete func(string, bool) error) error {
 	if s.process != nil {
 		return errors.New("iPerf is already running")
 	}
 	s.log.Debug("Starting iPerf client with test ID ", testId, ", address ", addr, ", port ", port)
 
 	s.testId = testId
-	s.process = exec.Command("iperf", "-c "+addr, "-p "+port)
+	s.process = exec.Command("iperf", "-c", addr, "-p", port)
 	go func() {
 		out, err := s.process.CombinedOutput()
 		if err != nil {
 			s.log.Error("Test failed with error: " + err.Error())
-			s.completeClientTest(string(out), true)
+			_ = onComplete(string(out), true)
 			return
 		}
 
-		s.completeClientTest(string(out), false)
+		_ = onComplete(string(out), false)
 	}()
 	return nil
 }
@@ -33,7 +33,7 @@ func (s *server) runIperfServer(testId int) error {
 	s.log.Debug("Starting iPerf server with test ID ", testId)
 
 	s.testId = testId
-	s.process = exec.Command("iperf", "-s", "-p "+s.config.iperfPort)
+	s.process = exec.Command("iperf", "-s", "-p", s.config.iperfPort)
 	go func() {
 		_, _ = s.process.CombinedOutput()
 	}()

@@ -59,7 +59,7 @@ func initServer(log echo.Logger) (server, error) {
 		return s, errors.New("env HASH is required")
 	}
 
-	return s, s.connect()
+	return s, nil
 }
 
 func (s *server) validate(key string) bool {

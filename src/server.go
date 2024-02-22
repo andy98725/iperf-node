@@ -46,13 +46,13 @@ func initServer(log echo.Logger) (server, error) {
 	}
 	s.config.id = i
 
-	s.config.serverAddr = os.Getenv("ENDPOINT")
+	s.config.serverAddr = os.Getenv("SERVER")
 	if s.config.serverAddr == "" {
-		return s, errors.New("env ENDPOINT is required")
+		return s, errors.New("env SERVER is required")
 	}
-	s.config.key = os.Getenv("ENDPOINT_KEY")
+	s.config.key = os.Getenv("KEY")
 	if s.config.key == "" {
-		return s, errors.New("env ENDPOINT_KEY is required")
+		return s, errors.New("env KEY is required")
 	}
 	s.config.hash = os.Getenv("HASH")
 	if s.config.hash == "" {

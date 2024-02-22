@@ -42,8 +42,8 @@ RUN adduser nonroot
 USER nonroot:nonroot
 
 ### ==================================
-ENV ENDPOINT=https://iperf-benchmark-stg-78bf74de879a.herokuapp.com
-ENV ENDPOINT_KEY="<enter key here>"
+ENV SERVER=https://iperf-benchmark-stg-78bf74de879a.herokuapp.com
+ENV KEY="<enter key here>"
 ENV HASH="<enter hash here>"
 ENV ID="<enter id here>"
 
